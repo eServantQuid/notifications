@@ -1,0 +1,195 @@
+FORMAT: 1A
+HOST:  https://eservant.quidinfo.it
+
+# Notifications services
+
+# Group Notifications
+
+## /notifications 
+
+[***STABLE***]
+
+### GET 
+
+Ritorna la lista di tutte le notifiche. 
+
+<a name="notification"></a>
+Ciascuna notifica ha:
+* `priority`: (number, required) da 10 a 30 è l'indicatore di ordine per gravità delle notifiche, indicando:
+    * **10**: grave;
+    * **20**: intermedio;
+    * **30**: basso.
+* `order`: (number, required) indica l'ordinamento in cui visualizzare la notifica. Maggiore è questo intero più recente è la notifica, l’ultima rimane sempre più in alto.
+* `actionActivityId`: (string, optional), identificativo dell'azione riferibile alla notifica, è utile nel chiamare il servizio `/core/notification-actions/{id}`.
+* `actionCategory`: (string, optional) **required** se è definito `actionActivityId`. Rappresenta il tipo di azione associabile alla notifica tra le seguenti:
+    * **GOTO**: notifica che visualizza bottone per apertura di un link;
+    * **PARTECIPATE**: notifica che visualizza bottone di partecipazione ad attività segnalata;
+    * **REPLY**: notifica che visualizza bottone per rispondere a messaggio;
+
+* `actionLink`: (string, optional), link da aprire quando `actionCategory` è **GOTO**.
+
+* `group`: (string, optional), rappresenta il topic di Firebase. Un topic associato ad una notifica è l'insieme dei device token a cui verrà inviata la notifica.
+
++ Response 200 (application/json)
+
+     + Attributes (CENotificationListRes)
+
+## /notifications/notification-actions/{id}
+
+[***STABLE***]
+
+### PUT 
+
+Esegue `notificationAction` indentificata da `id` in input e ritorna le informazioni riferite alla
+action appena eseguita. 
+
+Il parametro in input *necessario* è:
+* `id`: (number, required) identificativo della notification-action che si intende eseguire.
+
+Il parametro `actionValue` (string, optional) può essere valorizzata come segue:
+* un'espressione regolare di lunghezza minore od uguale a **140** caratteri alfanumerici ASCII, qualora l'
+`actionCategory` della notifica associata sia [**REPLY**](#notification).
+* una stringa di lunghezza pari ad **1** qualora l'`actionCategory` della notifica associata sia
+del tipo [**PARTECIPATE**](#notification). La stringa codificherà un booleano con la seguente semantica:
+    * *\"0\"* qualora l'utente che risponde alla notifica non intenda partecipare all'evento;
+    * *\"1\"* qualora l'utente  che risponde alla notifica esprima la volontà di partecipare all'evento.
+
+**N.B.**: se l'`actionCategory` della notifica associata è **GOTO**, `actionValue` non deve essere valorizzato.  
+
++ Parameters
+    + id: 10  (number, required) - identificativo dell' azione da effettuare, in risposta di una notifica 
+
++ Request GOTO (application/json)
+    
+    + Attributes ()
+
++ Response 200 (application/json)
+
+    + Attributes (CENotificationActionGoToRes)
+
++ Request REPLY (application/json)
+
+    + Attributes (NotificationActionReplyReq)
+    
++ Response 200 (application/json)
+
+    + Attributes (CENotificationActionReplyRes)
+
++ Request PARTECIPATING USER (application/json)
+
+    + Attributes (NotificationActionPartecipateYesReq)
+
++ Response 200 (application/json)
+
+    + Attributes (CENotificationActionPartecipateYesRes)
+
++ Response 500 (application/json)
+
+    + Attributes (CE230Error)
+
+## Data Structures
+
+### CENotificationListRes
++ metadata (MessagesSuccess)
++ payload (array[NotificationRes, NotificationRes1, NotificationRes2, NotificationRes3])
+
+### CENotificationActionGoToRes
++ metadata (MessagesSuccess)
++ payload (NotificationActionGoToRes)
+
+### CENotificationActionReplyRes
++ metadata (MessagesSuccess)
++ payload (NotificationActionReplyRes)
+
+### CENotificationActionPartecipateYesRes
++ metadata (MessagesSuccess)
++ payload (NotificationActionPartecipateYesRes)
+
+
+### NotificationActionReplyReq
++ actionValue: Certo, Morandi è uno dei miei cantanti preferiti! (string, optional) - messaggio di reply
+
+### NotificationActionPartecipateYesReq
++ actionValue: 1 (string, optional) - utente partecipante
+
+### NotificationActionGoToRes
++ id: 10 (number, required) - identificatore della notification action (medesima passata in input)
++ notificationId: 124 (number, optional) - id della action associata all'azione
++ actionLink:  https://www.autostrade.it (string, optional) - link che azione GOTO permette di aprire
+
+### NotificationActionReplyRes
++ id: 10 (number, required) - identificatore della notification action (medesima passata in input)
++ notificationId: 125 (number, optional) - id della action associata all'azione
++ senderDeviceToken: `db4gtcEJNfM:APA91bHHOnGze8z5AyeBbNSI_dXYfZZytOEdW44Ipd4z91IL4GH9A28BhN-VoZo9ZhgOn-iwEbfrGDo3AiGvzwksvnKsdV961J2giQ6I5rZ8YspzvGYEtN8y2szn1AhlTNhSMH_24re10` (string, required) - device token del mittente del messaggio al quale si risponde
++ actionValue: Certo, Morandi è uno dei miei cantanti preferiti! (string, optional) - messaggio di reply
+
+### NotificationActionPartecipateYesRes
++ id: 10 (number, required) - identificatore della notification action (medesima passata in input)
++ notificationId: 126 (number, optional) - id della action associata all'azione
++ actionValue: 1 (string, optional) - stringa indicante partecipazione
+
+### MessagesSuccess
++ messages (array[string]) - Nessun messaggio di errore
+
+### NotificationRes
+
++ id: 123 (number, required) - identificatore notifica
++ priority: 10 (number, required) - priorità di notifica
++ shortName: Emergenza: incendio (string, required) - nome notifica
++ text: L'incendio ha colpito il settore... (string, required) - descrizione
++ creationTS: `2018-11-05T19:04:15.735+0000` (string) - data di generazione della notifica
++ mainTS: `2018-11-05T30:04:15.735+0000` (string) - data di inizio (evento o altro)
++ order: 1 (number, required) - mappa un certo tipo di ordinamento per la visualizzazione delle notifiche da definire meglio con FE
++ group: emergenza (string, required) - categoria della notifica
+
+### NotificationRes1
+
++ id: 124 (number, required) - identificatore notifica
++ priority: 30 (number, required) - priorità di notifica
++ shortName: Coda su A1 (string, required) - nome notifica
++ text: Si prevede una coda di... (string, required) - descrizione
++ creationTS: `2018-11-05T19:04:15.735+0000` (string) - data di generazione della notifica
++ mainTS: `2018-11-05T30:04:15.735+0000` (string) - data di inizio (evento o altro)
++ order: 2 (number, required) - mappa un certo tipo di ordinamento per la visualizzazione delle notifiche da definire meglio con FE
++ group: traffico (string, required) - categoria della notifica
++ actionActivityId: 319 (number, optional) - serve per richiamare il servizio /core/notificationAction/{id} che riporta la risposta all'azione associata alla notifica
++ actionCategory: GOTO (string, optional) - azione associabile alla notifica, ad esempio rispondi si o reply ad un messaggio o link
++ actionLink:  https://www.autostrade.it (string, optional) - eventuale link da aprire sul modulo web interno o direttamente su browser, dipende da come funziona ionic
+
+### NotificationRes2
+
++ id: 125 (number, required) - identificatore notifica
++ priority: 30 (number, required) - priorità di notifica
++ shortName: Messaggio da Gigi (string, required) - nome notifica
++ text: Andiamo insieme al concerto di Gianni Morandi? (string, required) - descrizione
++ creationTS: `2018-11-05T19:15:15.730+0000` (string) - data di generazione della notifica
++ mainTS: `2018-11-05T30:15:15.735+0000` (string) - data di inizio (evento o altro)
++ order: 3 (number, required) - mappa un certo tipo di ordinamento per la visualizzazione delle notifiche da definire meglio con FE
++ receiverDeviceToken: 'db4gtcEJNfM:APA91bHHOnGze8z5AarBbNKU_dXYfZZytOEdW44Ipd4z91IL4GH9A28BhN-VoZo9ZhgOn-9pEbfrGDo3AiGvzwkKvnKsdV961J2giQ6I5rZ8' (string, optional) - token del destinatario della notifica 
++ actionActivityId: 320 (number, optional) - serve per richiamare il servizio /core/notificationAction/{id} che riporta la risposta all'azione associata alla notifica
++ actionCategory: REPLY (string, optional) - azione associabile alla notifica, ad esempio rispondi si o reply ad un messaggio o link
+
+### NotificationRes3
+
++ id: 126 (number, required) - identificatore notifica
++ priority: 30 (number, required) - priorità di notifica
++ shortName: Match Artemio Franchi (string, required) - nome notifica
++ text: Partecipa al match Fiorentina-Milan (string, required) - descrizione
++ creationTS: `2017-11-05T19:45:30.730+0000` (string) - data di generazione della notifica
++ mainTS: `2018-04-05T15:30:00.735+0000` (string) - data di inizio (evento o altro)
++ order: 4 (number, required) - mappa un certo tipo di ordinamento per la visualizzazione delle notifiche da definire meglio con FE
++ group: sport (string, required) - categoria della notifica
++ actionActivityId: 321 (number, optional) - serve per richiamare il servizio /core/notificationAction/{id} che riporta la risposta all'azione associata alla notifica
++ actionCategory: PARTECIPATE (string, optional) - azione associabile alla notifica, ad esempio rispondi si o reply ad un messaggio 
+
+
+### CE230Error
+- metadata (object)
+  - messages (array[230ErrorMessage]) - Lista di messaggi 
+
+### 230ErrorMessage
++ message: Errore validazione input (string, required) - descrizione messaggio
++ title: Validazione input (string, required) - Nome messaggio
++ type: ERROR (string, required) - Tipologia del messaggio
++ target: Modal (string, required) - Tipologia di rappresentazione del messaggio
++ errorCode: 230 (number, required) - Codice di errore
